@@ -1,0 +1,50 @@
+#create a PostgreSQL deployment and declare Pods configuration for the PostgreSQL in Kubernetes.
+#This PostgreSQL manifest for deployment of PostgreSQL container uses PostgreSQL 14-alpine image. 
+#It uses PostgreSQL configuration like username, password, database name from the secret. 
+#It also mounts the volume created from the persistent volumes and claims to make PostgreSQL container’s data persists.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trackingpostgres 
+  namespace: default
+spec:
+  replicas: 1 # Set deployment replicas
+  selector:
+    matchLabels:
+      app: trackingpostgres
+  template:
+    metadata:
+      labels:
+        app: trackingpostgres
+    spec:
+      containers:
+        - name: trackingpostgres
+          image: postgres:14
+          imagePullPolicy: "IfNotPresent"
+          args: ['-c', 'config_file=/etc/postgresql/postgresql.conf']
+          ports:
+            - containerPort: 5432  # Exposing the container port 5432 for PostgreSQL client connections.
+          env:
+            - name: POSTGRES_USER
+              value: postgresadmin
+            - name: POSTGRES_PASSWORD
+              value: admin123
+            
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              subPath: data
+              readOnly: false
+              name: postgredb
+              
+            - mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+              readOnly: false
+              name: pgsql-conf
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: postgres-gp2-pvc
+        - name: pgsql-conf
+          configMap:
+            name: pgsql-conf
