@@ -6,20 +6,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trackingpostgres 
+  name: metricspostgres 
   namespace: default
 spec:
   replicas: 1 # Set deployment replicas
   selector:
     matchLabels:
-      app: trackingpostgres
+      app: metricspostgres
   template:
     metadata:
       labels:
-        app: trackingpostgres
+        app: metricspostgres
     spec:
       containers:
-        - name: trackingpostgres
+        - name: metricspostgres
           image: postgres:14
           imagePullPolicy: "IfNotPresent"
           args: ['-c', 'config_file=/etc/postgresql/postgresql.conf']

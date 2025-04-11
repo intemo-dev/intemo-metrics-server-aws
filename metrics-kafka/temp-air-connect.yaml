@@ -1,0 +1,22 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: debezium-microservice-ocean-mastertracking
+  labels:
+    strimzi.io/cluster: intemo-connect-cluster
+spec:
+  class: io.debezium.connector.postgresql.PostgresConnector
+  tasksMax: 1
+  config:
+    database.hostname: "aafc1515f6eb34b7395ce5a04d170ec2-71474461.ap-south-1.elb.amazonaws.com"
+    database.port: "5432"
+    database.user: "postgresadmin"
+    database.password: "admin123"
+    database.dbname: oceantracking
+    database.server.name: events
+    topic.prefix: events
+    table.include.list: public.user_webhook_data
+    plugin.name: pgoutput
+    topic.creation.default.replication.factor: -1
+    topic.creation.default.partitions: 1
+    slot.name : "mastertrackingsocean"

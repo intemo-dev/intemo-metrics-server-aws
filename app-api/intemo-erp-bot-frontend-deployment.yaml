@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-bot-frontend-app
+  namespace: default
+  labels:
+    app: mail-bot-frontend-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-bot-frontend-app
+  template:
+    metadata:
+      labels:
+        app: mail-bot-frontend-app
+    spec:
+      containers:
+      - name: mail-bot-frontend-app      
+        image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/mail-bot-main:frontend114202562548
+        ports:
+        - name: http
+          containerPort: 7015
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 40m

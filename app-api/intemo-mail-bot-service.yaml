@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: intemo-mail-bot
+  namespace: default
+  labels:
+    app: intemo-mail-bot
+  annotations:
+    #service.beta.kubernetes.io/aws-load-balancer-type: external
+    #service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    # Note that the backend talks over HTTP.
+    # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
+    # TODO: Fill in with the ARN of your certificate.
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-south-1:885876711116:certificate/51b15d57-a1eb-448c-8620-762d8d7e2f9d
+    # Only run SSL on the port named "https" below.
+    # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+spec:
+  selector:
+    app: intemo-mail-bot
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: NodePort
