@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: mail-bot
+  name: bot-scheduler
 spec:
   schedule: "*/1 * * * *"                     # Runs every 5 mins
   concurrencyPolicy: "Forbid"
@@ -10,17 +10,14 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 1                         # Only 1 retry if it fails
-      activeDeadlineSeconds: 120
+      activeDeadlineSeconds: 180
       template:
         spec:
           terminationGracePeriodSeconds: 15  # Graceful shutdown timeout
           restartPolicy: Never
           containers:
-            - name: mail-bot
-              image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-mail-bot-main:mail-bot2242025142034
+            - name: bot-scheduler
+              image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-erp-bot-main:bot-scheduler25420258233
               imagePullPolicy: Always
-              env:
-                - name: EMAIL
-                  value: "devs@intemo.tech"
           imagePullSecrets:
             - name: regcred                     # Optional: For private ECR access
