@@ -1,0 +1,80 @@
+# Fluent Bit configuration
+config:
+  service: |
+    [SERVICE]
+        Flush        5
+        Log_Level    debug
+        Parsers_File parsers.conf
+
+  inputs: |
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Exclude_Path      /var/log/containers/*fluent-bit*.log
+        Parser            docker
+        Tag               kube.*
+        Read_from_head    true
+        Refresh_Interval  10
+        DB                /buffers/flb_kube.db
+        DB.sync           off
+
+  filters: |
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Merge_Log           On
+        Keep_Log            Off
+        Kube_Tag_Prefix     kube.var.log.containers.
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+
+    [FILTER]
+        Name                grep
+        Match               kube.*
+        Regex               kubernetes.labels.app    ^(intemo-mail-erp-bot|intemo-mail-bot|mail-bot-frontend-app)$
+
+  outputs: |
+    [OUTPUT]
+        Name               s3
+        Match              *
+        bucket             metrics-staging-logs
+        region             ap-south-1
+        total_file_size    5M
+        upload_timeout     10m
+        store_dir          /buffers
+        s3_key_format      /logs/intemo-mail-erp-bot/%Y/%m/%d/%H/%M/%S-$UUID.gz
+        compression        gzip
+
+  parsers: |
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+
+# Volume configurations
+extraVolumeMounts:
+  - name: buffer
+    mountPath: /buffers
+    readOnly: false
+    subPath: ""
+
+extraVolumes:
+  - name: buffer
+    emptyDir: {}
+
+# Security Context for Fluent Bit container
+securityContext:
+  runAsUser: 0  # Fluent Bit container running as root
+  runAsGroup: 0 # Group to which the container belongs
+  fsGroup: 1000 # Required for Fluent Bit to access mounted volumes
+
+# Resource requests and limits
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

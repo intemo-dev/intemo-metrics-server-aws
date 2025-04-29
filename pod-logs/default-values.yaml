@@ -1,0 +1,83 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  custom_parsers.conf: |
+    [PARSER]
+        Name docker_no_time
+        Format json
+        Time_Keep Off
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+  fluent-bit.conf: |
+    [SERVICE]
+        Daemon Off
+        Flush 1
+        Log_Level info
+        Parsers_File /fluent-bit/etc/parsers.conf
+        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+        Health_Check On
+
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*.log
+        multiline.parser docker, cri
+        Tag kube.*
+        Mem_Buf_Limit 5MB
+        Skip_Long_Lines On
+
+    # FILTER 1: Kubernetes enrichment
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+        Keep_Log Off
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+
+    # FILTER 2: Exclude kube-system namespace
+    [FILTER]
+        Name grep
+        Match kube.*
+        Exclude kubernetes.namespace_name kube-system
+
+    # FILTER 3: Include only specific containers
+    [FILTER]
+        Name grep
+        Match kube.*
+        Regex kubernetes.container_name ^(bot-scheduler|mail-bot|intemo-mail-erp-bot|intemo-mail-bot)$
+
+    [OUTPUT]
+        Name              s3
+        Match             *
+        bucket            metrics-staging-logs
+        region            ap-south-1
+        total_file_size   5M
+        upload_timeout    10m
+        use_put_object    On
+        store_dir         /tmp/fluentbit/s3
+        s3_key_format     /logs/$TAG/%Y/%m/%d/%H/%M/%S-$UUID.json
+        content_type      application/json
+        s3_key_format_tag_delimiters .-
+
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: fluent-bit
+    meta.helm.sh/release-namespace: default
+  creationTimestamp: "2025-04-25T05:31:35Z"
+  labels:
+    app.kubernetes.io/instance: fluent-bit
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: 3.2.10
+    helm.sh/chart: fluent-bit-0.48.10
+  name: fluent-bit
+  namespace: default
+  resourceVersion: "20164902"
+  uid: 50dc6b93-2da1-48d4-baba-f61c619856cd

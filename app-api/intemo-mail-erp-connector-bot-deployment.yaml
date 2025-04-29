@@ -16,15 +16,24 @@ spec:
         app: intemo-mail-erp-bot
     spec:
       containers:
-        - name: intemo-mail-erp-bot
-          image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/mail-erp-connector-main:mail-erp-connector11420256399
-          ports:
-            - name: http
-              containerPort: 5900
-          ports:
-            - name: http1
-              containerPort: 1504
-          ports:
-            - name: http2
-              containerPort: 6080
-          imagePullPolicy: Always
+      - name: intemo-mail-erp-bot
+        image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/mail-erp-connector-main:mail-erp-connector174202581258
+        ports:
+          - name: http
+            containerPort: 5900
+        ports:
+          - name: http1
+            containerPort: 1504
+        ports:
+          - name: http2
+            containerPort: 6080
+        imagePullPolicy: Always
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - erp-bot-backend
