@@ -17,7 +17,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: mail-bot
-              image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-mail-bot-main:mail-bot2242025142034
+              image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-mail-bot-main:mail-bot294202552223
               imagePullPolicy: Always
               env:
                 - name: EMAIL
