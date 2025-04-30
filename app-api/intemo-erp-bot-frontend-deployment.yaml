@@ -16,8 +16,8 @@ spec:
         app: mail-bot-frontend-app
     spec:
       containers:
-      - name: mail-bot-frontend-app      
-        image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/mail-bot-main:frontend114202562548
+      - name: mail-bot-frontend-app
+        image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-mail-bot-main:admin244202574019
         ports:
         - name: http
           containerPort: 7015
