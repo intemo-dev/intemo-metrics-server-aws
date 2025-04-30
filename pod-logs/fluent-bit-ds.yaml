@@ -45,10 +45,10 @@ spec:
           timeoutSeconds: 1
         name: fluent-bit
         env:
-        - name: AWS_ACCESS_KEY_ID
-          value: AKIA44QS533GGPJXGR7C
-        - name: AWS_SECRET_ACCESS_KEY
-          value: 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
+        # - name: AWS_ACCESS_KEY_ID
+        #   value: AKIA44QS533GGPJXGR7C
+        # - name: AWS_SECRET_ACCESS_KEY
+        #   value: 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
         ports:
         - containerPort: 2020
           name: http
