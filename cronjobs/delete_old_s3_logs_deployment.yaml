@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: s3-old-logs-autoclean-metrics
+spec:
+  schedule: "0 */6 * * *"        
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 10
+      template:
+        spec:
+          containers:
+          - name: s3-old-logs-autoclean-metrics
+            image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-webapp-main:delete-old-s3-logs12520251204
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: S3_BUCKET
+              value: metrics-staging-logs
+            - name: DAYS_OLD
+              value: "1"
+            - name: PREFIX
+              value: "logs/"
+            - name: SLACK_WEBHOOK_URL
+              value: https://hooks.slack.com/services/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
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials-db-backup
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials-db-backup
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_DEFAULT_REGION
+              value: ap-south-1
+            - name: CHANNEL
+              value: "#db-backup-notification"
+            - name: CONTENT
+              value: "Metrics logs has been deleted from s3 successfully"
+          restartPolicy: OnFailure

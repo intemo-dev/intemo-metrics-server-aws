@@ -6,51 +6,52 @@ apiVersion: v1
 data:
   custom_parsers.conf: |
     [PARSER]
-        Name docker_no_time
-        Format json
-        Time_Keep Off
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Name                  docker_no_time
+        Format                json
+        Time_Keep             Off
+        Time_Key              time
+        Time_Format           %Y-%m-%dT%H:%M:%S.%L
   fluent-bit.conf: |
     [SERVICE]
-        Daemon Off
-        Flush 1
-        Log_Level info
-        Parsers_File /fluent-bit/etc/parsers.conf
-        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
-        HTTP_Server On
-        HTTP_Listen 0.0.0.0
-        HTTP_Port 2020
-        Health_Check On
+        Daemon                Off
+        Flush                 3600
+        Log_Level             info
+        Parsers_File          /fluent-bit/etc/parsers.conf
+        Parsers_File          /fluent-bit/etc/conf/custom_parsers.conf
+        HTTP_Server           On
+        HTTP_Listen           0.0.0.0
+        HTTP_Port             2020
+        Health_Check          On
+        storage.path          /fluent-bit/storage
+        storage.sync              normal
+        storage.checksum          off
+        storage.max_chunks_up     128
+        storage.backlog.mem_limit 50M
 
     [INPUT]
-        Name tail
-        Path /var/log/containers/*.log
-        multiline.parser docker, cri
-        Tag kube.*
-        Mem_Buf_Limit 5MB
-        Skip_Long_Lines On
+        Name                  tail
+        Path                  /var/log/containers/*_default_*.log
+        #Parser                docker
+        #Multiline.Parser      docker, cri
+        DB                    /fluent-bit/storage/tail-containers.db
+        Tag                   kube.var.log.containers.*
+        Mem_Buf_Limit         100MB
+        Storage.Type          filesystem
+        Skip_Long_Lines       On
 
-    # FILTER 1: Kubernetes enrichment
     [FILTER]
-        Name kubernetes
-        Match kube.*
-        Merge_Log On
-        Keep_Log Off
-        K8S-Logging.Parser On
-        K8S-Logging.Exclude On
+        Name                  kubernetes
+        Match                 kube.*
+        Kube_Tag_Prefix       kube.var.log.containers.
+        Merge_Log             On
+        Keep_Log              Off
+        K8S-Logging.Parser    On
+        K8S-Logging.Exclude   Off
 
-    # FILTER 2: Exclude kube-system namespace
-    [FILTER]
-        Name grep
-        Match kube.*
-        Exclude kubernetes.namespace_name kube-system
-
-    # FILTER 3: Include only specific containers
-    [FILTER]
-        Name grep
-        Match kube.*
-        Regex kubernetes.container_name ^(bot-scheduler|mail-bot|intemo-mail-erp-bot|intemo-mail-bot)$
+        # [FILTER]
+        #Name                            grep
+        #Match                           kube.*
+        #Regex kubernetes.namespace_name ^default$
 
     [OUTPUT]
         Name              s3
@@ -62,15 +63,21 @@ data:
         use_put_object    On
         store_dir         /tmp/fluentbit/s3
         s3_key_format     /logs/$TAG/%Y/%m/%d/%H/%M/%S-$UUID.json
-        content_type      application/json
-        s3_key_format_tag_delimiters .-
+        compression       gzip
+        store_dir         /fluent-bit/storage/s3
+        preserve_data_ordering On
 
+
+        #[OUTPUT]
+        #Name                  stdout
+        #Match                 kube.*
+        #Format                json_lines
 kind: ConfigMap
 metadata:
   annotations:
     meta.helm.sh/release-name: fluent-bit
     meta.helm.sh/release-namespace: default
-  creationTimestamp: "2025-04-25T05:31:35Z"
+  creationTimestamp: "2025-04-29T12:26:31Z"
   labels:
     app.kubernetes.io/instance: fluent-bit
     app.kubernetes.io/managed-by: Helm
@@ -79,5 +86,5 @@ metadata:
     helm.sh/chart: fluent-bit-0.48.10
   name: fluent-bit
   namespace: default
-  resourceVersion: "20164902"
-  uid: 50dc6b93-2da1-48d4-baba-f61c619856cd
+  resourceVersion: "23957933"
+  uid: b7d4b899-bc66-42b3-8448-58d72f12ae94
