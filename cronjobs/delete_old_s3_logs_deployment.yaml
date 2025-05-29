@@ -15,7 +15,7 @@ spec:
             image: 885876711116.dkr.ecr.ap-south-1.amazonaws.com/intemo-webapp-main:delete-old-s3-logs12520251204
             imagePullPolicy: IfNotPresent
             env:
-            - name: S3_BUCKET
+            - name: BUCKET_NAME
               value: metrics-staging-logs
             - name: DAYS_OLD
               value: "1"
