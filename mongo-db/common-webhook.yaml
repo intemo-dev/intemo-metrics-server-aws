@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: common-webhook-connector
+  labels:
+    strimzi.io/cluster: intemo-connect-cluster
+spec:
+  class: io.debezium.connector.mongodb.MongoDbConnector
+  tasksMax: 1
+  config:
+    mongodb.connection.string: "mongodb://mongoadmin:Intemo2023!%25@ab561c233b7cf4f7b85c362af27f2cea-995052253.ap-south-1.elb.amazonaws.com:27017/admin?authSource=admin"
+    collection.include.list: "webhook.common_webhook"
+    key.converter: "org.apache.kafka.connect.json.JsonConverter"
+    key.converter.schemas.enable: "false"
+    tasks.max: "1"
+    topic.prefix: "events"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter.schemas.enable: "false"

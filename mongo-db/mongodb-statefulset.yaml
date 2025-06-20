@@ -1,0 +1,121 @@
+# mongodb-statefulset.yaml (Final Version with InitContainer)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-headless
+  namespace: default
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  clusterIP: None
+  selector:
+    app: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: default
+spec:
+  serviceName: "mongodb-headless"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      terminationGracePeriodSeconds: 10
+      # =======================================================
+      # THE INITCONTAINER PATTERN TO FIX PERMISSIONS
+      # =======================================================
+      initContainers:
+        - name: copy-and-permission-keyfile
+          image: busybox:1.36 # A small image with shell tools
+          # This command copies the keyfile and sets its ownership and permissions
+          command:
+            - "sh"
+            - "-c"
+            - |
+              cp /etc/secret-volume/mongo-keyfile /etc/keyfile-init/mongo-keyfile &&
+              chmod 400 /etc/keyfile-init/mongo-keyfile &&
+              chown 999:999 /etc/keyfile-init/mongo-keyfile
+          volumeMounts:
+            # Mount the original secret (read-only)
+            - name: keyfile-secret-volume
+              mountPath: /etc/secret-volume
+              readOnly: true
+            # Mount the shared volume where the corrected file will be placed
+            - name: keyfile-init-volume
+              mountPath: /etc/keyfile-init
+      # =======================================================
+      # MAIN CONTAINER
+      # =======================================================
+      containers:
+        - name: mongodb
+          image: mongo:5.0
+          args:
+            - "--replSet"
+            - "rs0"
+            - "--bind_ip_all"
+            - "--auth"
+            # Point to the keyfile in the SHARED volume prepared by the initContainer
+            - "--keyFile"
+            - "/etc/keyfile-init/mongo-keyfile"
+          ports:
+            - containerPort: 27017
+          envFrom:
+            - secretRef:
+                name: mongodb-secret
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+            # Mount the SHARED volume (not the secret directly)
+            - name: keyfile-init-volume
+              mountPath: /etc/keyfile-init
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - "mongo --username $MONGO_INITDB_ROOT_USERNAME --password $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - "mongo --username $MONGO_INITDB_ROOT_USERNAME --password $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+      # =======================================================
+      # VOLUMES
+      # =======================================================
+      volumes:
+        # The original secret volume, mounted only by the initContainer
+        - name: keyfile-secret-volume
+          secret:
+            secretName: mongodb-keyfile-secret
+        # The shared emptyDir volume for the corrected keyfile
+        - name: keyfile-init-volume
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
