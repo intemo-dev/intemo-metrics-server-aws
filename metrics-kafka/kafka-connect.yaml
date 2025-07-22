@@ -7,7 +7,7 @@ metadata:
 spec:
   version: 3.9.0  # <- Update this to a supported Kafka version
   replicas: 1
-  bootstrapServers: a78c2e269a9f54f54b42891cb7d9f493-995104c0e4215b73.elb.ap-south-1.amazonaws.com:9094
+  bootstrapServers: aeb2c81c5e06d4b8da1cbe9b51ea2d5d-d8a4c35bdd0cb9b0.elb.ap-south-1.amazonaws.com:9094
   config:
     group.id: connect-cluster
     config.storage.topic: connect-cluster-configs
