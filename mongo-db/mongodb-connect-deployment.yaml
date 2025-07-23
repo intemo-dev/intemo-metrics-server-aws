@@ -1,0 +1,66 @@
+# mongodb-connect-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # A new name, separate from your postgres connect cluster
+  name: intemo-connect-cluster
+  namespace: kafka # We'll deploy this in the 'default' namespace
+  labels:
+    app: intemo-connect-cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intemo-connect-cluster
+  template:
+    metadata:
+      labels:
+        app: intemo-connect-cluster
+    spec:
+      containers:
+        - name: connect
+          # The official Debezium image that has the MongoDB connector built-in
+          image: debezium/connect:2.5
+          ports:
+            - containerPort: 8083
+          env:
+            # --- CRITICAL KAFKA CONNECTION INFO ---
+            # This points to your existing Strimzi Kafka cluster
+            - name: BOOTSTRAP_SERVERS
+              value: "staging-metrics-intemo-kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            
+            # --- KAFKA CONNECT CONFIGURATION ---
+            # A unique group ID for this new connect cluster
+            - name: GROUP_ID
+              value: "mongodb-connect-cluster" 
+            # Use unique names for the internal topics to avoid conflicts
+            - name: CONFIG_STORAGE_TOPIC
+              value: "mongodb_connect_configs"
+            - name: OFFSET_STORAGE_TOPIC
+              value: "mongodb_connect_offsets"
+            - name: STATUS_STORAGE_TOPIC
+              value: "mongodb_connect_statuses"
+            
+            # --- PRODUCTION SETTINGS ---
+            # Set replication factor to match your Kafka cluster (usually 3)
+            - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "3"
+            - name: CONNECT_OFFSET_STORAGE_REplication_FACTOR
+              value: "3"
+            - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+              value: "3"
+---
+# This service provides an API endpoint for our new connect deployment
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-debezium-connect-api
+  namespace: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: mongodb-debezium-connect

@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: atlas-test-kctr
+  labels:
+    strimzi.io/cluster: intemo-connect-cluster
+spec:
+  class: io.debezium.connector.mongodb.MongoDbConnector
+  tasksMax: 1
+  config:
+    mongodb.connection.string: "mongodb+srv://arockiyas:intemo12@cluster0.3mc0ywy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    collection.include.list: "test.users"
+    key.converter: "org.apache.kafka.connect.json.JsonConverter"
+    key.converter.schemas.enable: "false"
+    tasks.max: "1"
+    topic.prefix: "events"
+    value.converter: "org.apache.kafka.connect.json.JsonConverter"
+    value.converter.schemas.enable: "false"

@@ -1,0 +1,21 @@
+# mongodb-loadbalancer-svc.yaml (Corrected with Classic LB Annotation)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-loadbalancer
+  namespace: default
+  annotations:
+    # This forces AWS to create a Classic Load Balancer, just like your Postgres service
+    service.beta.kubernetes.io/aws-load-balancer-type: "classic"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+  selector:
+    # This correctly points to your MongoDB pod
+    app: mongodb

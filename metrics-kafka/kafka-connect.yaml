@@ -3,37 +3,26 @@ kind: KafkaConnect
 metadata:
   name: intemo-connect-cluster
   annotations:
-#  # use-connector-resources configures this KafkaConnect
-#  # to use KafkaConnector resources to avoid
-#  # needing to call the Connect REST API directly
     strimzi.io/use-connector-resources: "true"
 spec:
-  version: 3.4.0
-  image: docker.io/intemo/connect-debezium:latest
+  version: 3.9.0  # <- Update this to a supported Kafka version
   replicas: 1
-  bootstrapServers: a9fadbb7f2adf4cfd95d443a5f29cac3-d158e8a8cafe8556.elb.ap-south-1.amazonaws.com:9094
-  #tls:
-  #  trustedCertificates:
-  #    - secretName: my-cluster-cluster-ca-cert
-  #      certificate: ca.crt
+  bootstrapServers: aeb2c81c5e06d4b8da1cbe9b51ea2d5d-d8a4c35bdd0cb9b0.elb.ap-south-1.amazonaws.com:9094
   config:
     group.id: connect-cluster
-    offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
+    offset.storage.topic: connect-cluster-offsets
     status.storage.topic: connect-cluster-status
-    # -1 means it will use the default replication factor configured in the broker
     config.storage.replication.factor: -1
     offset.storage.replication.factor: -1
     status.storage.replication.factor: -1
-  template:
-      pod:
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                  - matchExpressions:
-                      - key: app
-                        operator: In
-                        values:
-                          - kafka
- 
+  build:
+    output:
+      type: docker
+      image: stephenz07/mong-deb:2.5
+      pushSecret: regcred
+    plugins:
+      - name: debezium-mongodb-connector
+        artifacts:
+          - type: tgz
+            url: "https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/2.5.0.Final/debezium-connector-mongodb-2.5.0.Final-plugin.tar.gz"
